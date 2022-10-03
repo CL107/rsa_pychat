@@ -88,5 +88,6 @@ class Client:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     m = Process()
     m.main()
