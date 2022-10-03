@@ -1,15 +1,11 @@
 ### 1. Get Alpine Linux
-FROM alpine:latest
+FROM python:latest
 
 ### 2. Label
-LABEL maintainer="Dockerfile created by CL107 <https://github.com/CL107>"
+LABEL maintainer="Dockerfile created by CL107 <https://github.com/CL107> and maintained by zanda8893 <https://github.com/zanda8893>"
 
 ### 3. Get dependencies
-RUN apk update \
-&& apk upgrade \
-&& apk add python3 \
-&& apk add py3-pip \
-&& pip3 install python-dotenv
+RUN pip3 install python-dotenv
 
 ### 4. Copy server files
 COPY ./server.py /rsa_pychat/server.py
