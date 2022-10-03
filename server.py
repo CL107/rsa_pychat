@@ -56,6 +56,10 @@ class Process:
             self.connections[-1].start()
             logging.info(f"Active connections {len(self.connections)}")
 
+            thread = threading.Thread(target=self.global_messaging)
+            thread.start()
+            logging.debug("Started global messaging thread")
+
 
 class Client:
     def __init__(self, client, address):
@@ -65,7 +69,7 @@ class Client:
         self.name = ""
 
     def __rec(self):
-        self.name = message = self.socket.recv(2048).decode("utf-8")
+        self.name = self.socket.recv(2048).decode("utf-8")
         while True:
             message = ""
 
