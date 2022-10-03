@@ -1,11 +1,13 @@
 # Importing Modules
 import socket
 import threading
+import logging
 from dotenv import load_dotenv
 from os import getenv
 
+
 # Server processing class
-class process:
+class Process:
     def __init__(self):
         
         load_dotenv()
@@ -21,47 +23,17 @@ class process:
         self.DB_PASS = getenv("DBPASS")
 
         self.connections = []
+        self.client = None
 
+    def broadcast(self, message):  # Broadcasts a message to all connected clients.
+        for connection in self.connections:
+            connection.send(message)
 
-    def listening(self):
-        
-        while True:
-            message = self.client.recv(2048).decode("utf-8")
-
-            if message != "":
-                self.message = self.username + "~" + message
-                self.broadcast()
-
-            else:
-                print(f"Message recieved from {self.username} is empty")
-            
-    def direct_message(self):
-        self.message += "`,#"
-        self.client.sendall(self.message.encode("utf-8"))
-
-    def broadcast(self):
-        
-        for user in self.connections:
-            self.client = user[1]
-            self.direct_message()
-
-    def handle_client(self):
-        
-        while True:
-            self.username = self.client.recv(2048).decode("utf-8")
-            
-            # New user
-            if self.username != "":
-                self.connections.append((self.username, self.client))
-                self.message = "SERVER~" + f"{self.username} has joined the chat"
-                self.broadcast()
-                break
-
-            else:
-                self.client.send("Username empty".encode("utf-8"))
-
-        thread = threading.Thread(target=self.listening)
-        thread.start()
+    def global_messaging(self):  # Handles message intended for all users.
+        for connection in self.connections:
+            if not connection.messages:
+                for message in connection.messages:
+                    self.broadcast(message)
 
     def main(self):
 
@@ -69,20 +41,52 @@ class process:
         
         try:
             server.bind((self.HOST, self.PORT))
-            print(f"Running on {self.HOST}:{self.PORT}")
+            logging.info(f"Running on {self.HOST}:{self.PORT}")
 
         except socket.error as msg:
-            print('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+            logging.critical('Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
 
         server.listen()
 
         while True:
             self.client, address = server.accept()
-            print(f"Connected to {address}")
-            thread = threading.Thread(target=self.handle_client)
-            thread.start()
-            print(f"Active connections {threading.activeCount() - 1}")
+            logging.debug(f"Connected to {address}")
+
+            self.connections.append(Client(self.client, address))
+            self.connections[-1].start()
+            logging.info(f"Active connections {len(self.connections)}")
+
+
+class Client:
+    def __init__(self, client, address):
+        self.socket = client
+        self.address = address
+        self.messages = []
+        self.name = ""
+
+    def __rec(self):
+        self.name = message = self.socket.recv(2048).decode("utf-8")
+        while True:
+            message = ""
+
+            message = self.socket.recv(2048).decode("utf-8")
+            while "`,#" not in message:
+                message += self.socket.recv(2048).decode("utf-8")
+
+            message = message.replace("`,#", "")
+
+            self.messages.append(message)
+
+    def send(self, message):
+        message += "`,#"
+        self.socket.sendall(message.encode("utf-8"))
+
+    def start(self):
+        thread = threading.Thread(target=self.__rec)
+        thread.start()
+        logging.debug(f"Started thread for {self.address}")
+
 
 if __name__ == "__main__":
-    m = process()
+    m = Process()
     m.main()
