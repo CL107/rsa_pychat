@@ -30,10 +30,11 @@ class Process:
             connection.send(message)
 
     def global_messaging(self):  # Handles message intended for all users.
-        for connection in self.connections:
-            if not connection.messages:
-                for message in connection.messages:
-                    self.broadcast(message)
+        while True:
+            for connection in self.connections:
+                if not connection.messages:
+                    for message in connection.messages:
+                        self.broadcast(message)
 
     def main(self):
 
@@ -48,6 +49,10 @@ class Process:
 
         server.listen()
 
+        thread = threading.Thread(target=self.global_messaging)
+        thread.start()
+        logging.debug("Started global messaging thread")
+
         while True:
             self.client, address = server.accept()
             logging.debug(f"Connected to {address}")
@@ -56,9 +61,7 @@ class Process:
             self.connections[-1].start()
             logging.info(f"Active connections {len(self.connections)}")
 
-            thread = threading.Thread(target=self.global_messaging)
-            thread.start()
-            logging.debug("Started global messaging thread")
+
 
 
 class Client:
