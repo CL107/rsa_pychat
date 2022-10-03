@@ -35,6 +35,7 @@ class Process:
                 if not connection.messages:
                     for message in connection.messages:
                         self.broadcast(message)
+                        logging.info(f"{connection.username}{message}")
 
     def main(self):
 
@@ -62,8 +63,6 @@ class Process:
             logging.info(f"Active connections {len(self.connections)}")
 
 
-
-
 class Client:
     def __init__(self, client, address):
         self.socket = client
@@ -73,6 +72,7 @@ class Client:
 
     def __rec(self):
         self.name = self.socket.recv(2048).decode("utf-8")
+        logging.debug(f"Username {self.name} from {self.address}")
         while True:
             message = ""
 
@@ -83,6 +83,7 @@ class Client:
             message = message.replace("`,#", "")
 
             self.messages.append(message)
+            logging.debug(f"{self.name} sent {message}")
 
     def send(self, message):
         message += "`,#"
